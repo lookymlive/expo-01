@@ -65,10 +65,25 @@ CREATE TABLE posts (
   updated_at timestamptz DEFAULT now()
 );
 
+-- Create videos table
+CREATE TABLE IF NOT EXISTS videos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    title TEXT NOT NULL,
+    description TEXT,
+    url TEXT NOT NULL,
+    thumbnail_url TEXT,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    business_name TEXT NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected'))
+);
+
 -- Enable Row Level Security
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE business_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE videos ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Users can view all profiles"
@@ -113,12 +128,36 @@ CREATE POLICY "Users can create their own posts"
     )
   );
 
+CREATE POLICY "Users can view approved videos" 
+    ON videos FOR SELECT 
+    USING (status = 'approved');
+
+CREATE POLICY "Business users can insert their own videos" 
+    ON videos FOR INSERT 
+    WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Business users can update their own videos" 
+    ON videos FOR UPDATE 
+    USING (auth.uid() = user_id);
+
+-- Create an index on status for better query performance
+CREATE INDEX videos_status_idx ON videos(status);
+
 -- Create function to handle profile updates
 CREATE OR REPLACE FUNCTION handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Function to automatically update updated_at timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = TIMEZONE('utc', NOW());
+    RETURN NEW;
 END;
 $$ language 'plpgsql';
 
@@ -137,3 +176,9 @@ CREATE TRIGGER update_posts_updated_at
   BEFORE UPDATE ON posts
   FOR EACH ROW
   EXECUTE PROCEDURE handle_updated_at();
+
+-- Trigger to call the function before update
+CREATE TRIGGER update_videos_updated_at
+    BEFORE UPDATE ON videos
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

@@ -2,6 +2,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from '../context/auth';
 
+if (typeof window === 'undefined') {
+  (global as any).window = globalThis;
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
