@@ -10,14 +10,14 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.expo-01.myapp"
+      "bundleIdentifier": "com.lookym.app"
     },
     "android": {
+      "package": "com.lookym.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      },
-      "package": "com.expo-01.myapp"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +39,14 @@
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e4b28a52-685c-429b-ba49-ecb327ac29b5"
+      }
     }
   }
 }
